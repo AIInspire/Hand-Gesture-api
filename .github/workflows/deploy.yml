@@ -1,0 +1,43 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches:
+      - main  
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Test with pytest
+      run: pytest tests
+
+    - name: Build and push Docker image to Railway
+      env:
+        RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+      run: |
+        # Login to Railway Container Registry
+        echo $RAILWAY_API_KEY | docker login container-registry.railway.app -u $RAILWAY_API_KEY --password-stdin
+        
+        # Build image
+        docker build -t container-registry.railway.app/<your-project-id>/<your-service-name>:latest .
+        
+        # Push image
+        docker push container-registry.railway.app/<your-project-id>/<your-service-name>:latest
+        
+        # Deploy via Railway CLI
+        railway up --detach
