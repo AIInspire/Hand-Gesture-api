@@ -1,8 +1,36 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
+from prometheus_client import Counter, Histogram, generate_latest
 from app.schemas import GestureInput, PredictionOutput
 from app.predict import predict_gesture
+import time
 
 app = FastAPI(title="Hand Gesture Classifier", version="1.0")
+
+# -----------------------
+# Prometheus Metrics Setup
+# -----------------------
+REQUEST_COUNT = Counter(
+    "request_count", "Total number of HTTP requests"
+)
+REQUEST_LATENCY = Histogram(
+    "request_latency_seconds", "Latency (seconds) of HTTP requests"
+)
+
+# -----------------------
+# Middleware to collect metrics
+# -----------------------
+@app.middleware("http")
+async def track_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    duration = time.time() - start_time
+    REQUEST_COUNT.inc()
+    REQUEST_LATENCY.observe(duration)
+    return response
+
+# -----------------------
+# Routes
+# -----------------------
 
 @app.get("/")
 def read_root():
@@ -16,3 +44,9 @@ def classify_gesture(data: GestureInput):
         "predicted_label": decoded_label
     }
 
+# -----------------------
+# Expose Prometheus metrics endpoint
+# -----------------------
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type="text/plain")
