@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import Counter, Histogram, generate_latest
 from app.schemas import GestureInput, PredictionOutput
@@ -21,34 +21,45 @@ app.add_middleware(
 # -----------------------
 # Prometheus Metrics Setup
 # -----------------------
-REQUEST_COUNT = Counter(
-    "request_count", "Total number of HTTP requests"
+
+# Data-related: Total records received
+DATA_RECORDS_RECEIVED = Counter(
+    "data_records_received_total", "Total number of data records received for prediction"
 )
+
+# Model-related: Total predictions made
+PREDICTION_COUNT = Counter(
+    "model_prediction_total", "Total number of predictions made by the model"
+)
+
+# Server-related: HTTP request latency
 REQUEST_LATENCY = Histogram(
     "request_latency_seconds", "Latency (seconds) of HTTP requests"
 )
 
 # -----------------------
-# Middleware to collect metrics
+# Middleware to collect request latency
 # -----------------------
 @app.middleware("http")
 async def track_requests(request: Request, call_next):
     start_time = time.time()
     response = await call_next(request)
     duration = time.time() - start_time
-    REQUEST_COUNT.inc()
     REQUEST_LATENCY.observe(duration)
     return response
 
 # -----------------------
 # Routes
 # -----------------------
+
 @app.get("/")
 def read_root():
     return {"message": "Hand Gesture Classification API is up and running!"}
 
 @app.post("/predict", response_model=PredictionOutput)
 def classify_gesture(data: GestureInput):
+    DATA_RECORDS_RECEIVED.inc()
+    PREDICTION_COUNT.inc()
     encoded_label, decoded_label = predict_gesture(data.features)
     return {
         "encoded_label": encoded_label,

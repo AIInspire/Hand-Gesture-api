@@ -1,23 +1,22 @@
 
 # Monitoring Metrics Explanation
 
-The following metrics are collected to monitor the API’s performance and health:
+We monitor three key metrics to ensure the reliability and performance of our Hand Gesture Classification API:
 
-## 1. Server-related metric: `request_count_total`
-- Total number of HTTP requests received by the API.
-- Tracks the overall usage and traffic of the service.
+## 1. `data_records_received_total` (Data-related)
 
-## 2. Server-related metric: `request_latency_seconds_bucket`
-- Measures the distribution of request latencies in seconds.
-- Helps identify performance bottlenecks and latency issues.
+- **What it tracks**: Total number of data records received for prediction.
+- **Why it matters**: Measures the volume of input data being processed, helping monitor load and usage patterns.
 
-## 3. Server-related metric: `process_max_fds`
-- Maximum number of file descriptors the process can open.
-- Important for monitoring resource limits to prevent exhaustion.
+## 2. `model_prediction_total` (Model-related)
 
-## 4. Server-related metric: `process_resident_memory_bytes`
-- Resident memory usage (RAM) by the process in bytes.
-- Monitors memory consumption to detect leaks or high usage.
+- **What it tracks**: Total number of predictions made by the model.
+- **Why it matters**: Tracks how often the model is invoked, useful to understand inference workload and utilization.
+
+## 3. `request_latency_seconds` (Server-related)
+
+- **What it tracks**: Histogram of latency (response time) for HTTP requests in seconds.
+- **Why it matters**: Helps monitor API responsiveness and detect any performance degradation.
 
 ---
 
